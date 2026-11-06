@@ -10,6 +10,7 @@ maps to <LOCAL_ROOT>/datasets/teacher/shard-0.jsonl.
 """
 import os
 import glob
+import shutil
 
 LOCAL_ROOT = os.environ.get("LOCAL_ROOT", ".")
 
@@ -89,8 +90,10 @@ def upload_file(bucket, path, local_file):
     if use_s3():
         _s3_client().upload_file(local_file, bucket, path, Config=_transfer_config())
     else:
-        with open(local_file, "rb") as f:
-            write_bytes(bucket, path, f.read())
+        dest = os.path.join(LOCAL_ROOT, bucket, path)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        if os.path.normcase(os.path.abspath(local_file)) != os.path.normcase(os.path.abspath(dest)):
+            shutil.copyfile(local_file, dest)
 
 
 def list_keys(bucket, prefix):

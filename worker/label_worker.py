@@ -63,7 +63,7 @@ def call_teacher(template: str, command: str) -> str:
     )
     with urllib.request.urlopen(req, timeout=300) as resp:
         body = json.loads(resp.read().decode("utf-8"))
-    return body.get("response", "").strip()
+    return body.get("response", "")
 
 
 def read_command_pool() -> list[dict]:

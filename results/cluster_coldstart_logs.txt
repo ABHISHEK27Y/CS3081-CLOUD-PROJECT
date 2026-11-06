@@ -1,12 +1,70 @@
+run 1, command-parser-85ffbbd685-b9hzq
 INFO:     Started server process [1]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+downloading 7 model objects from s3://models/v1
+INFO:     10.42.0.1:50662 - "GET /readyz HTTP/1.1" 503 Service Unavailable
 model loaded (version v1)
-INFO:     10.42.1.1:55014 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     10.42.0.1:45490 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     10.42.0.1:45488 - "GET /healthz HTTP/1.1" 200 OK
+
+
+run 1, command-parser-85ffbbd685-jb8jk
 INFO:     Started server process [1]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+downloading 7 model objects from s3://models/v1
+INFO:     10.42.1.1:54840 - "GET /readyz HTTP/1.1" 503 Service Unavailable
 model loaded (version v1)
-INFO:     10.42.0.1:42826 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     10.42.1.1:40938 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.42.1.1:40934 - "GET /readyz HTTP/1.1" 200 OK
+
+
+run 2, command-parser-85ffbbd685-5xp4n
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+downloading 7 model objects from s3://models/v1
+INFO:     10.42.1.1:49676 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+model loaded (version v1)
+INFO:     10.42.1.1:48914 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     10.42.1.1:48918 - "GET /healthz HTTP/1.1" 200 OK
+
+
+run 2, command-parser-85ffbbd685-nvmst
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+downloading 7 model objects from s3://models/v1
+INFO:     10.42.0.1:39052 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+model loaded (version v1)
+INFO:     10.42.0.1:44228 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.42.0.1:44230 - "GET /readyz HTTP/1.1" 200 OK
+
+
+run 3, command-parser-85ffbbd685-nf42t
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+downloading 7 model objects from s3://models/v1
+INFO:     10.42.0.1:32834 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+model loaded (version v1)
+INFO:     10.42.0.1:57182 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.42.0.1:57166 - "GET /readyz HTTP/1.1" 200 OK
+
+
+run 3, command-parser-85ffbbd685-pwmbc
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+downloading 7 model objects from s3://models/v1
+INFO:     10.42.1.1:59936 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+model loaded (version v1)
+INFO:     10.42.1.1:41864 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     10.42.1.1:41866 - "GET /healthz HTTP/1.1" 200 OK

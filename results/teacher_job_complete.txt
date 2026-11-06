@@ -1,0 +1,9 @@
+NAME            STATUS     COMPLETIONS   DURATION   AGE     CONTAINERS   IMAGES                 SELECTOR
+teacher-label   Complete   2/2           131m       4h48m   worker       cloud-mini/worker:v1   batch.kubernetes.io/controller-uid=717e7a03-db91-4529-97cf-219b3932e4da
+NAME                    READY   STATUS      RESTARTS   AGE     IP          NODE                      NOMINATED NODE   READINESS GATES
+teacher-label-0-ppvjq   0/1     Completed   0          4h48m   10.42.0.6   k3d-cloud-mini-agent-0    <none>           <none>
+teacher-label-1-htggx   0/1     Completed   0          4h48m   10.42.1.8   k3d-cloud-mini-server-0   <none>           <none>
+[shard 0] 1500/1500
+[shard 0] done -> datasets/teacher/shard-0.jsonl
+[shard 1] 1500/1500
+[shard 1] done -> datasets/teacher/shard-1.jsonl

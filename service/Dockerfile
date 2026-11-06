@@ -1,6 +1,6 @@
 # Task 3 — Inference service container (CPU-only, no model weights)
 # Using the CPU-only PyTorch wheel keeps us comfortably under the 2 GB ceiling.
-FROM python:3.11-slim AS runtime
+FROM python:3.11-slim@sha256:65bd3d9f1d7fa268dd1909973ba7eb4bdf41f6dcf2cfbe76ba9528b170f3fd79 AS runtime
 
 WORKDIR /app
 

@@ -4,30 +4,10 @@
   python training/predict.py --model EleutherAI/pythia-70m --input data/validation.jsonl --out results/pred_base.jsonl
 
 --model is a local directory (your trained model) or a Hugging Face name (the untrained base).
-Each output line is {"id": "...", "prediction": "<raw model text>"}; score.py parses it.
+Each output line is {"id": "...", "prediction": "<raw decoded completion>"}; score.py parses it.
 """
 import argparse
 import json
-
-
-def extract_json(generated):
-    """Return the model's JSON object as raw text: from the first '{' to its matching '}'.
-
-    Kept identical to the service's extractor so training-time and serving-time scores line up.
-    """
-    s = generated.strip()
-    start = s.find("{")
-    if start == -1:
-        return s
-    depth = 0
-    for i in range(start, len(s)):
-        if s[i] == "{":
-            depth += 1
-        elif s[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return s[start:i + 1]
-    return s[start:]
 
 
 def main():
@@ -61,7 +41,7 @@ def main():
                 )
             new = gen[0][enc["input_ids"].shape[1]:]
             text = tokenizer.decode(new, skip_special_tokens=True)
-            out.write(json.dumps({"id": r["id"], "prediction": extract_json(text)}) + "\n")
+            out.write(json.dumps({"id": r["id"], "prediction": text}) + "\n")
     print(f"wrote {a.out} ({len(rows)} predictions)")
 
 

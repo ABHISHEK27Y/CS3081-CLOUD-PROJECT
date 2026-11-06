@@ -1,0 +1,17 @@
+target: cloud-mini-service-limit-test
+requests: 50
+HTTP failures: 6
+observed peak memory: 363.1 MiB
+elapsed seconds: 59.5
+resource samples:
+cloud-mini-service-limit-test 0.16% 343.3MiB / 1GiB
+cloud-mini-service-limit-test 0.19% 351.7MiB / 1GiB
+cloud-mini-service-limit-test 0.17% 352.4MiB / 1GiB
+cloud-mini-service-limit-test 0.18% 352.2MiB / 1GiB
+cloud-mini-service-limit-test 0.18% 357.7MiB / 1GiB
+cloud-mini-service-limit-test 0.16% 357.5MiB / 1GiB
+cloud-mini-service-limit-test 0.17% 357.6MiB / 1GiB
+cloud-mini-service-limit-test 0.14% 357.9MiB / 1GiB
+cloud-mini-service-limit-test 0.14% 363.1MiB / 1GiB
+cloud-mini-service-limit-test 0.20% 363.1MiB / 1GiB
+cloud-mini-service-limit-test 0.17% 362.7MiB / 1GiB

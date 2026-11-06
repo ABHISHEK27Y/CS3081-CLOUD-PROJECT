@@ -1,0 +1,71 @@
+target: cloud-mini-service-v1-final
+requests: 50
+HTTP failures: 1
+observed peak memory: 344.5 MiB
+elapsed seconds: 36.9
+CPU limit: 1.0 core
+memory limit: 1.0 GiB
+OOM killed: False
+requests:
+1/50: HTTP 200 {"intent":"calendar_remove","date":null,"time":null,"place":null}
+2/50: HTTP 200 {"intent":"alarm_set","date":null,"time":"five in the morning","place":null}
+3/50: HTTP 200 {"intent":"datetime_query","date":null,"time":"our time","place":"washington"}
+4/50: HTTP 200 {"intent":"datetime_query","date":null,"time":null,"place":null}
+5/50: HTTP 200 {"intent":"alarm_set","date":"tuesday","time":"six pm","place":null}
+6/50: HTTP 200 {"intent":"calendar_set","date":null,"time":null,"place":null}
+7/50: HTTP 200 {"intent":"datetime_query","date":"brank fourteenth","time":null,"place":null}
+8/50: HTTP 200 {"intent":"calendar_query","date":"this weekend","time":null,"place":null}
+9/50: HTTP 200 {"intent":"datetime_query","date":null,"time":"central time zone","place":null}
+10/50: HTTP 200 {"intent":"datetime_query","date":null,"time":null,"place":"dale"}
+11/50: HTTP 200 {"intent":"weather_query","date":"this week","time":null,"place":null}
+12/50: HTTP 200 {"intent":"datetime_query","date":null,"time":null,"place":"pstuck"}
+13/50: HTTP 200 {"intent":"recommendation_events","date":null,"time":null,"place":"the area"}
+14/50: HTTP 200 {"intent":"calendar_query","date":"this afternoon","time":null,"place":null}
+15/50: HTTP 200 {"intent":"calendar_remove","date":"today","time":null,"place":null}
+16/50: HTTP 200 {"intent":"calendar_set","date":null,"time":null,"place":null}
+17/50: HTTP 500 {"error":"invalid_model_output"}
+18/50: HTTP 200 {"intent":"calendar_set","date":"tomorrow","time":"fifteen minutes before","place":null}
+19/50: HTTP 200 {"intent":"calendar_query","date":null,"time":null,"place":null}
+20/50: HTTP 200 {"intent":"weather_query","date":null,"time":null,"place":"our city"}
+21/50: HTTP 200 {"intent":"recommendation_events","date":null,"time":null,"place":"meeting"}
+22/50: HTTP 200 {"intent":"calendar_set","date":null,"time":null,"place":null}
+23/50: HTTP 200 {"intent":"calendar_set","date":"every june third","time":null,"place":null}
+24/50: HTTP 200 {"intent":"calendar_query","date":null,"time":null,"place":null}
+25/50: HTTP 200 {"intent":"datetime_query","date":null,"time":null,"place":"new york"}
+26/50: HTTP 200 {"intent":"weather_query","date":null,"time":null,"place":"new york city"}
+27/50: HTTP 200 {"intent":"calendar_query","date":"today","time":null,"place":null}
+28/50: HTTP 200 {"intent":"weather_query","date":null,"time":"at home","place":null}
+29/50: HTTP 200 {"intent":"alarm_query","date":null,"time":"right now","place":null}
+30/50: HTTP 200 {"intent":"alarm_set","date":null,"time":"ten am","place":null}
+31/50: HTTP 200 {"intent":"calendar_query","date":"today","time":null,"place":null}
+32/50: HTTP 200 {"intent":"datetime_query","date":"this year","time":null,"place":null}
+33/50: HTTP 200 {"intent":"alarm_set","date":"next tuesday","time":"eight hundred am","place":null}
+34/50: HTTP 200 {"intent":"recommendation_events","date":null,"time":null,"place":null}
+35/50: HTTP 200 {"intent":"alarm_set","date":"today","time":null,"place":null}
+36/50: HTTP 200 {"intent":"alarm_query","date":null,"time":"seven am","place":null}
+37/50: HTTP 200 {"intent":"calendar_set","date":"tomorrow","time":"seven","place":null}
+38/50: HTTP 200 {"intent":"calendar_set","date":"monday","time":"six","place":null}
+39/50: HTTP 200 {"intent":"calendar_set","date":null,"time":null,"place":"wyatt's"}
+40/50: HTTP 200 {"intent":"alarm_set","date":null,"time":null,"place":null}
+41/50: HTTP 200 {"intent":"datetime_query","date":null,"time":null,"place":"california"}
+42/50: HTTP 200 {"intent":"datetime_query","date":null,"time":null,"place":"wyatt's"}
+43/50: HTTP 200 {"intent":"alarm_query","date":null,"time":null,"place":null}
+44/50: HTTP 200 {"intent":"datetime_query","date":"fifteenth","time":null,"place":null}
+45/50: HTTP 200 {"intent":"alarm_set","date":"next tues march","time":null,"place":null}
+46/50: HTTP 200 {"intent":"calendar_set","date":"this friday","time":null,"place":null}
+47/50: HTTP 200 {"intent":"recommendation_events","date":null,"time":null,"place":null}
+48/50: HTTP 200 {"intent":"calendar_remove","date":null,"time":"one pm","place":null}
+49/50: HTTP 200 {"intent":"calendar_query","date":"the first of january","time":null,"place":null}
+50/50: HTTP 200 {"intent":"calendar_set","date":"today","time":"one pm","place":null}
+resource samples:
+cloud-mini-service-v1-final 0.13% 319.8MiB / 1GiB
+cloud-mini-service-v1-final 0.14% 328.5MiB / 1GiB
+cloud-mini-service-v1-final 0.14% 330.3MiB / 1GiB
+cloud-mini-service-v1-final 0.12% 330.8MiB / 1GiB
+cloud-mini-service-v1-final 0.13% 335.8MiB / 1GiB
+cloud-mini-service-v1-final 0.14% 335.8MiB / 1GiB
+cloud-mini-service-v1-final 0.14% 335.5MiB / 1GiB
+cloud-mini-service-v1-final 0.13% 335.8MiB / 1GiB
+cloud-mini-service-v1-final 0.13% 340.1MiB / 1GiB
+cloud-mini-service-v1-final 0.14% 339.9MiB / 1GiB
+cloud-mini-service-v1-final 0.12% 344.5MiB / 1GiB

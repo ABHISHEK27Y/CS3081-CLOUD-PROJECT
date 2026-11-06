@@ -1,0 +1,6 @@
+https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/releases/tag/model-v1
+release_manifest.json 410 sha256:864e4807fdeb29e64a02178d6cba0601e1e7bcb5ec0389dff334d59166bc1889
+v1-model.sha256 77 sha256:02affd3d3049badb51c964a5c717c625e59b1de1f712b64cc3335c6b0ed806ac
+v1.tar.gz 231713155 sha256:d08e0443a7cf845269819f4b7a6bdadebddb03d355c62cb46696b12e65ffe147
+v2-model.sha256 76 sha256:266d984f635cc05dc5a4dd5757bc7cd64f76e8e5b14d984f54fc547445d2fb56
+v2.tar.gz 231610856 sha256:917adb6555d382ebe23a17dd5b220def6c66644fc7bfaed308acdee8c3133b1f

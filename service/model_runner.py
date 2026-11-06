@@ -17,7 +17,7 @@ _VALID_INTENTS = set(_SCHEMA["intents"])
 
 
 def extract_json(text: str) -> str:
-    """Grab the first balanced {...} block from model output. Mirrors training/predict.py."""
+    """Grab the first balanced {...} block for service-side schema validation."""
     s = text.strip()
     start = s.find("{")
     if start == -1:
@@ -68,9 +68,10 @@ def _resolve_model_dir(uri: str) -> str:
 def _download_model(uri: str) -> str:
     """Pull model artifacts from S3 endpoint into a temp directory."""
     assert uri.startswith("s3://"), "MODEL_URI must be s3://<bucket>/<prefix>"
-    _, _, rest = uri[len("s3://"):].partition("/")
-    bucket, _, prefix = rest.partition("/")
-    prefix = (prefix or "").rstrip("/") + "/"
+    bucket, separator, prefix = uri[len("s3://"):].partition("/")
+    if not bucket or not separator or not prefix:
+        raise ValueError("MODEL_URI must be s3://<bucket>/<prefix>")
+    prefix = prefix.rstrip("/") + "/"
 
     import boto3
     from botocore.client import Config
@@ -89,6 +90,7 @@ def _download_model(uri: str) -> str:
     objects = resp.get("Contents", [])
     if not objects:
         raise RuntimeError(f"no objects found under {uri}")
+    print(f"downloading {len(objects)} model objects from {uri}", flush=True)
 
     for obj in objects:
         key = obj["Key"]
@@ -111,7 +113,12 @@ class Runner:
         self.max_new_tokens = int(os.environ.get("MAX_NEW_TOKENS", "64"))
 
     def load(self):
+        import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
+        # The Pod has a one-core CPU limit. PyTorch otherwise creates more threads than
+        # the quota permits, causing contention and long request tails under load.
+        torch.set_num_threads(1)
+        torch.set_num_interop_threads(1)
         local_dir = _resolve_model_dir(os.environ["MODEL_URI"])
         self.tokenizer = AutoTokenizer.from_pretrained(local_dir)
         if self.tokenizer.pad_token is None:

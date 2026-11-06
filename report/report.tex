@@ -1,0 +1,238 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=1.7cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage[strings]{underscore}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage[colorlinks=true,urlcolor=blue!55!black,linkcolor=black,citecolor=black]{hyperref}
+
+\setlist{nosep,leftmargin=1.4em}
+\emergencystretch=2.5em  % avoid overfull lines from long code/URLs
+\hbadness=10000
+\newcommand{\code}[1]{\texttt{\small #1}}
+\renewcommand{\arraystretch}{1.12}
+\titlespacing*{\section}{0pt}{9pt}{3pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.5em}{}
+\setcounter{secnumdepth}{0}
+\pagestyle{plain}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Cloud Computing Mini Project --- Report}\\[2pt]
+  {\normalsize Knowledge Distillation \& Deployment of a Command-Parsing Language Model on a Local Cloud}\\[6pt]
+  \textbf{Student:} Abhishek Yadav \quad\textbf{Roll:} 230103041 \quad\textbf{Final tag:} \code{final}\\[2pt]
+  \textbf{Repo:} \url{https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT.git}
+\end{center}
+
+\noindent\colorbox{gray!12}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{\small
+\textbf{Note:} numbers below are measured in the local k3d cluster and saved under \code{results/}.
+Text under \textit{Assumption} is a stated assumption, not a measured result.}}
+
+\section{Architecture overview}
+The system has four planes on a two-node k3d (k3s-in-Docker) cluster on one laptop: \textbf{storage} (SeaweedFS, S3 API, namespace
+\code{data}), \textbf{pipeline} (labelling workers, namespace \code{pipeline}), \textbf{serving} (FastAPI
+\code{/parse}, namespace \code{app}, behind a Traefik Ingress) and \textbf{control} (Makefile + GitHub
+Actions). The teacher (\code{phi3.5} on Ollama) labels commands; \code{clean.py} produces
+\code{datasets/v1/train.jsonl}; \code{pythia-70m} is fine-tuned on those labels; weights live in object
+storage and a GitHub Release (never in git or the image); the service downloads them at start-up. Data flow:
+\code{commands\_pool $\rightarrow$ teacher shards $\rightarrow$ clean $\rightarrow$ train.jsonl $\rightarrow$
+student $\rightarrow$ models/ $\rightarrow$ service $\rightarrow$ /parse}.
+
+\section{Task 1 --- Object storage \& parallel teacher labelling}
+\textbf{Architecture.} \code{datasets} and \code{models} buckets on SeaweedFS. An \textbf{indexed Job} runs
+two workers; Kubernetes gives each a \code{JOB\_COMPLETION\_INDEX} used as \code{SHARD\_INDEX}
+(\code{SHARD\_COUNT=2}).\\
+\textbf{Implementation.} \code{worker/label\_worker.py} takes commands where
+\code{line\_number \% SHARD\_COUNT == SHARD\_INDEX}, calls Ollama (temp 0, seed 42) with
+\code{prompts/teacher\_prompt.txt} and writes \code{\{id,text,teacher\_raw\}} to
+\code{datasets/teacher/shard-N.jsonl} (raw reply stored unedited, with resume + periodic upload).
+\code{worker/clean.py} removes (a)~invalid JSON, (b)~wrong keys, (c)~bad intent, (d)~slot value not present
+in the command, (e)~duplicate text (smallest id kept), writing \code{datasets/v1/train.jsonl} in id order
+with its SHA-256.\\
+\textbf{Results.}
+
+\begin{center}\small
+\begin{tabular}{rrrrrrr}
+\toprule
+input & (a) invalid & (b) keys & (c) intent & (d) slot & duplicates & kept \\
+\midrule
+\textbf{3000} & 0 & 3 & 11 & 192 & 46 & \textbf{2748} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Checksum \code{datasets/v1/train.sha256} = \code{153368ded71b3d1f736f4af55f735a257840eb1c4f6bd220aebd1a908d0b9787}.
+($\text{input} = a+b+c+d+\text{dup}+\text{kept} \rightarrow 0+3+11+192+46+2748 = 3000$, verified; checksum is
+deterministic on re-run.) With JSON-constrained decoding (\code{format:"json"}) the teacher produced
+\textbf{100\%} valid JSON and \textbf{0} empty replies over all 3{,}000 commands, so rejections (a) are zero
+and cleaning is dominated by (d) invented-slot and duplicate removal.\\
+\textbf{Sharding.} Deterministic modulo split $\rightarrow$ every id appears in exactly one shard, no
+coordination needed, and shards run on separate pods in parallel; adding workers only changes
+\code{SHARD\_COUNT}.\\
+\textbf{Limitations / improvements.} CPU teacher is slow (131\,min for 3{,}000 commands on 2 parallel
+shards, laptop CPU); a shared work queue would rebalance stragglers better than static modulo sharding.
+
+\section{Task 2 --- Training the student (sequence-level distillation)}
+\textbf{Architecture.} Each example is \code{Command: <cmd>\textbackslash nJSON: <teacher JSON>}; the student
+learns to reproduce the teacher's output (sequence-level). Prompt tokens are masked in the loss so only the
+JSON is learned.\\
+\textbf{Implementation.} \code{training/train.py} reads only \code{training/config.yaml} (seed 42, lr
+5e-5, batch 8, 4 epochs, max\_seq\_len 128, first 1{,}500 records). \code{make train SUBSET=50} smoke-tests.
+Loss per epoch $\rightarrow$ \code{training/loss.csv}. Model + tokenizer $\rightarrow$ \code{models/v1/},
+archived to \code{v1.tar.gz} with SHA-256; v2 uses a different seed.\\
+\textbf{Results.} (percentages over the 100-example \code{validation.jsonl})
+
+\begin{center}\small
+\begin{tabular}{lrrrrrr}
+\toprule
+model & json\_validity & intent & date & time & place & full\_frame \\
+\midrule
+teacher (phi3.5) & 100.0 & 86.0 & 80.0 & 86.0 & 87.0 & \textbf{52.0} \\
+untrained pythia-70m & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & \textbf{0.0} \\
+\textbf{student v1} & 100.0 & 84.0 & 83.0 & 88.0 & 85.0 & \textbf{50.0} \\
+student v2 (seed 7) & 96.0 & 78.0 & 63.0 & 79.0 & 74.0 & \textbf{33.0} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Loss per epoch (student v1): \textbf{0.247 $\rightarrow$ 0.101 $\rightarrow$ 0.063 $\rightarrow$ 0.061}
+(\code{results/loss\_v1.csv}; v2 in \code{loss\_v2.csv}). After distillation the student reaches
+\textbf{100\% valid JSON} and \textbf{full\_frame 50\%} vs the teacher's 52\% --- it keeps most of the
+teacher's skill but a 70\,M model underfits the slot rules, as expected.\\
+\textbf{Prompt boundary.} Training and inference end the prefix at \code{"JSON:"}, with the leading
+space owned by the completion. This makes the prompt tokens a stable prefix of the training sequence;
+the same boundary is used in \code{train.py}, \code{predict.py}, and the service.\\
+\textbf{Explanation (required).} (a) Sequence-level distillation trains on the teacher's \textit{generated
+text}. (b) Logit-based distillation trains on the teacher's \textit{full probability distribution} per token
+(soft targets). (c) It is not possible here because the teacher is served through Ollama, which returns text
+only --- we never see its logits, and the vocabularies differ.\\
+\textbf{Limitations / improvements.} Student full\_frame (50\%) trails the teacher (52\%); one valid JSON
+reply used an intent outside the eight allowed by the service schema. A larger student or cleaner teacher
+prompt could help. True logit-level distillation
+would need a same-vocabulary teacher whose logits we can read.
+
+\section{Task 3 --- Inference service in a container}
+\textbf{Architecture.} FastAPI, port 8000: \code{POST /parse}, \code{GET /healthz}, \code{GET /readyz}.
+Config from \code{MODEL\_URI}, \code{MODEL\_VERSION}, \code{S3\_ENDPOINT}, \code{MAX\_NEW\_TOKENS}; AWS creds
+from a Secret. Model downloaded from object storage at start-up (loaded in a background thread
+$\rightarrow$ \code{/readyz} 503 until ready).\\
+\textbf{Implementation.} Every output is validated against \code{schema.json}; invalid $\rightarrow$ HTTP 500
+\code{\{"error":"invalid\_model\_output"\}}, never broken JSON with 200. \code{FAULT\_INJECT=1} forces an
+invalid output to test that path. Headers \code{X-Model-Version}, \code{X-Served-By} (Pod name). CPU-only
+pinned image, weights excluded.\\
+\textbf{Results.} The live v1 service downloaded seven model objects from SeaweedFS at startup;
+\code{/readyz} returned 503 during loading and 200 afterward. Ingress \code{/parse} returned the
+four-key body and both required headers. With \code{FAULT\_INJECT=1}, \code{/parse} returned the exact
+HTTP 500 body \code{\{"error":"invalid\_model\_output"\}}. The built image is
+\textbf{1.742\,GB} ($<$ 2\,GB). In a container limited to 1 CPU and 1\,GiB,
+\textbf{50 sequential requests} completed in 36.9\,s; 1 returned an invalid-intent 500, observed peak
+memory was \textbf{344.5\,MiB}, and Docker reported \code{OOMKilled=false}
+(\code{results/cluster\_50\_requests.txt}).\\
+\textbf{Limitations / improvements.} Single uvicorn worker per replica; request batching would raise
+throughput.
+
+\section{Task 4 --- Kubernetes deployment, scaling, reliability}
+\textbf{Architecture.} Deployment (2 replicas, requests 250m/512Mi, limits 1/1Gi), Service, Traefik Ingress
+on \code{/parse}, HPA 1--2 @ 70\% CPU, \code{RollingUpdate maxUnavailable=0, maxSurge=1}. The
+local cluster has two k3d nodes on one laptop.\\
+\textbf{Results.}
+\begin{itemize}
+\item \textbf{Rolling update} v1$\rightarrow$v2 under the four-user load test, then rollback:
+\code{X-Model-Version} showed v2 after rollout and v1 after \code{rollout undo}. With a 10\,s
+\code{preStop} drain, 6 of 238 requests failed (2.52\%), all HTTP 500 from invalid model output;
+there were no Ingress 502s. The 0.5\% target was \emph{not} met because of model errors.
+\item \textbf{Recovery:} deleted one Pod under four-user load; the Deployment restored \textbf{2 Ready}
+replicas. Of 252 requests, 3 failed (1.19\%), all model-output 500s and no Ingress errors; the 2\%
+failure target was met.
+\item \textbf{Cold start} (3 runs): \textbf{20\,s, 20\,s, 21\,s} $\rightarrow$ median \textbf{20\,s}; logs show
+each replacement Pod downloaded seven model objects before \code{/readyz} became 200.
+\item \textbf{Load balancing} (2 Ready): \textbf{129 / 123} header-counted responses $\rightarrow$ 51.2\% / 48.8\% across replicas.
+\item \textbf{HPA:} observed \textbf{1 $\rightarrow$ 2 $\rightarrow$ 1} replicas; CPU peaked at
+\textbf{312\%} of request during recovery load (target 70\%). The two-replica limit capped further scaling.
+\end{itemize}
+\textbf{Limitations.} Both nodes share one laptop, so there is no cross-machine fault tolerance;
+\code{maxReplicas=2} and both replicas share the host CPUs, so scale-out adds little real capacity;
+metrics-server warms up slowly.
+
+\section{Task 5 --- Subnetting \& NACL}
+\textbf{Subnets of \code{10.20.0.0/16}} (largest first, contiguous):
+
+\begin{center}\small
+\begin{tabular}{lrllll}
+\toprule
+Subnet & Hosts & CIDR & Range & Broadcast & Usable \\
+\midrule
+app & 1000 & 10.20.0.0/22 & 10.20.0.1--10.20.3.254 & 10.20.3.255 & 1022 \\
+public & 250 & 10.20.4.0/24 & 10.20.4.1--10.20.4.254 & 10.20.4.255 & 254 \\
+data & 100 & 10.20.5.0/25 & 10.20.5.1--10.20.5.126 & 10.20.5.127 & 126 \\
+management & 20 & 10.20.5.128/27 & 10.20.5.129--10.20.5.158 & 10.20.5.159 & 30 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{NACL (public subnet).} Verified \textbf{6/6} on the sample packets (\code{nacl\_sim.py}).
+Inbound: deny all from \code{198.51.100.0/24} (rule 100, before the web allows), allow tcp 80/443 from
+anywhere, tcp 22 from management, tcp 1024--65535 from app (replies). Outbound: tcp 8000 to app, tcp
+1024--65535 anywhere (replies). \textbf{Explanation.} A NACL is stateless, so replies need their own rules;
+and because the first matching (lowest-numbered) rule wins, the \code{198.51.100.0/24} deny must have a
+lower rule number than the 80/443 allows or packet S04 would be allowed.\\
+\textbf{Limitations / improvements.} Largest-first contiguous allocation leaves gaps and a subnet can't grow
+in place; defining the plan as code (Terraform) would make it reproducible. A NACL is coarse (subnet-wide,
+stateless); per-instance stateful security groups would be finer.
+
+\clearpage
+\section{Task 6 --- Reproducibility, testing, CI/CD}
+\code{make up} builds and deploys from a fresh clone in two commands after the Release is available;
+\code{make down} deletes the cluster. CI stages: lint $\rightarrow$ tests (24 passed locally)
+$\rightarrow$ model evaluation from the \code{model-v1} Release $\rightarrow$ quality gate
+\code{score.py --min-validity 95} $\rightarrow$ gitleaks. The trained Release-model
+\href{https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42230797041}{CI run passed all four jobs},
+including the 95\% validity gate and a clean secret scan. A separate
+\href{https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42219523454}{base-model run failed at Predict \& score}
+with 0\% validity, demonstrating the gate. A separate
+\href{https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42219651934}{fresh-clone k3d workflow}
+passed build, deployment, Ingress, cold-start, load, rollout, recovery, and HPA steps.
+\code{AI\_USE.md} records AI usage.\\
+\textbf{Limitations / improvements.} The two k3d nodes share one laptop, and test coverage is not gated;
+a coverage threshold and a smoke deploy on every PR would strengthen validation.
+
+\section{Task 7 --- Performance, cost, review}
+\textbf{Load test} (standard 2-minute Locust command): 4 users through the Traefik Ingress to two
+replicas (1 CPU / 1 GiB limit each): \textbf{254 requests}, \textbf{3 failures (1.18\%)}, all HTTP 500
+from the schema-checked model output. The p50 was \textbf{1500\,ms}, p95 \textbf{3600\,ms}, and throughput
+\textbf{2.155\,rps} (\code{results/cluster\_loadtest\_stats.csv}). Pod peak samples were
+\textbf{623m CPU / 410\,MiB} and \textbf{1003m CPU / 444\,MiB}; cold-start median was 20\,s.
+The p95 met the 5{,}000\,ms target, but the 1\% error target was \emph{not} met.\\
+\textbf{Cost.} \textit{Assumption:} 2 replicas, each billed at limits 1 vCPU + 1 GiB. hourly $= 2 \times
+(1{\times}3.50 + 1{\times}0.45) = $ \textbf{7.90 INR/hr}; at the measured \textbf{2.1550 rps} $\rightarrow$
+7{,}758.14 req/hr $\rightarrow$ cost/1000 $=$ \textbf{1.0183 INR} (\code{results/cost\_cluster.txt}).\\
+\textbf{SLO.} \textit{Target:} $\geq$ 99\% of requests succeed over the load-test window. Cluster run:
+\textbf{251/254 (98.82\%)} succeeded. The 1\% error budget allowed 2.54 requests, i.e. at most 2 whole
+failures. The 3 failures exceeded it by 1 request.\\
+\textbf{Review table.}
+
+\begin{center}\small
+\begin{tabular}{p{3.0cm}p{4.3cm}p{3.1cm}p{4.3cm}}
+\toprule
+Component & Evidence (measured) & Limitation & Improvement \\
+\midrule
+Data \& storage & 2748 kept of 3000 & 192 invented-slot replies & refine teacher prompt \\
+Model quality & full\_frame 50\% (v1) & 1 invalid intent/100 & improve training targets \\
+Latency \& throughput & p95 3600\,ms, 2.155 rps & CPU inference & request batching \\
+Resource utilisation & 1003m CPU, 444\,MiB (one Pod) & shared host & independent nodes \\
+Reliability \& recovery & cold median 20\,s, 3/254 load failures & model errors & stricter training objective \\
+Security \& cost & NACL 6/6, 1.0183 INR/1000 & shared S3 identity & scoped keys \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{References}
+SLURP (Bastianelli et al., EMNLP 2020); Kim \& Rush, Sequence-Level KD (EMNLP 2016); k3d, SeaweedFS, Hugging
+Face Transformers, Kubernetes, and AWS VPC NACL documentation.
+
+\end{document}

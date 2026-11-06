@@ -1,0 +1,9 @@
+CPU smoke test: python training/train.py --version smoke --subset 50 --no-upload
+Runtime: Python 3.11, torch 2.4.1 CPU, transformers 4.44.2, PyYAML 6.0.2
+Examples: 50
+epoch,loss
+1,1.112023
+2,0.242061
+3,0.151492
+Model files: config.json, generation_config.json, model.safetensors, model.sha256, special_tokens_map.json, tokenizer.json, tokenizer_config.json
+Archive SHA-256: dc3326b9f45ea1613f350cd1ff53be2cebb209c29203e04e0fd5b63892b948f2  smoke.tar.gz

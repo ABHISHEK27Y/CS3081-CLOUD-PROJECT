@@ -1,0 +1,13 @@
+HTTP 500 {"error":"invalid_model_output"}
+downloading 7 model objects from s3://models/v1
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     172.17.0.1:34724 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+INFO:     172.17.0.1:36914 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+model loaded (version v1)
+INFO:     172.17.0.1:36922 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     172.17.0.1:36936 - "POST /parse HTTP/1.1" 500 Internal Server Error
+INFO:     172.17.0.1:47070 - "POST /parse HTTP/1.1" 500 Internal Server Error
+INFO:     172.17.0.1:34974 - "POST /parse HTTP/1.1" 500 Internal Server Error

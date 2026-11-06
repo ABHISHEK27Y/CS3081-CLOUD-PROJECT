@@ -1,0 +1,29 @@
+buckets: datasets, models
+datasets objects: 5
+  commands_pool.jsonl
+  teacher/shard-0.jsonl
+  teacher/shard-1.jsonl
+  v1/train.jsonl
+  v1/train.sha256
+models objects: 21
+  smoke/config.json
+  smoke/generation_config.json
+  smoke/model.safetensors
+  smoke/model.sha256
+  smoke/special_tokens_map.json
+  smoke/tokenizer.json
+  smoke/tokenizer_config.json
+  v1/config.json
+  v1/generation_config.json
+  v1/model.safetensors
+  v1/model.sha256
+  v1/special_tokens_map.json
+  v1/tokenizer.json
+  v1/tokenizer_config.json
+  v2/config.json
+  v2/generation_config.json
+  v2/model.safetensors
+  v2/model.sha256
+  v2/special_tokens_map.json
+  v2/tokenizer.json
+  v2/tokenizer_config.json

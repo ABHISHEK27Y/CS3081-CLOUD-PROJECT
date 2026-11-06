@@ -1,0 +1,20 @@
+{
+  "expected": 3000,
+  "observed": 1100,
+  "per_shard": {
+    "0": 550,
+    "1": 550
+  },
+  "missing": 1900,
+  "repeated": 0,
+  "wrong_shard": 0,
+  "wrong_text": 0,
+  "complete": false,
+  "missing_examples": [
+    "C1101",
+    "C1102",
+    "C1103",
+    "C1104",
+    "C1105"
+  ]
+}

@@ -1,0 +1,74 @@
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE    CONTAINERS   IMAGES                  SELECTOR
+deployment.apps/command-parser   2/2     2            2           2m6s   service      cloud-mini/service:v1   app=command-parser
+
+NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE    SELECTOR
+service/command-parser   ClusterIP   10.43.87.238   <none>        80/TCP    2m6s   app=command-parser
+
+NAME                                       CLASS     HOSTS   ADDRESS                 PORTS   AGE
+ingress.networking.k8s.io/command-parser   traefik   *       172.18.0.3,172.18.0.4   80      2m6s
+
+NAME                                                 REFERENCE                   TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/command-parser   Deployment/command-parser   cpu: 1%/70%   1         2         2          2m5s
+
+NAME                                 READY   STATUS    RESTARTS   AGE    IP          NODE                      NOMINATED NODE   READINESS GATES
+pod/command-parser-c676687b5-rxnbk   1/1     Running   0          2m6s   10.42.0.7   k3d-cloud-mini-agent-0    <none>           <none>
+pod/command-parser-c676687b5-zs4v9   1/1     Running   0          2m6s   10.42.1.9   k3d-cloud-mini-server-0   <none>           <none>
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[pod/command-parser-c676687b5-rxnbk/service] downloading 7 model objects from s3://models/smoke
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:35546 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:44316 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+[pod/command-parser-c676687b5-rxnbk/service] model loaded (version smoke)
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:59238 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:59236 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:42412 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:42428 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:52284 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:52286 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:55142 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:55144 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:35904 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:35906 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:58622 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:58634 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:59568 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:59570 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:51674 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:51682 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:51858 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:51860 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:50390 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-rxnbk/service] INFO:     10.42.0.1:50388 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] downloading 7 model objects from s3://models/smoke
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:52356 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:35646 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+[pod/command-parser-c676687b5-zs4v9/service] model loaded (version smoke)
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:49406 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:49408 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:44664 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:44680 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:34378 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:34368 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:33582 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:33568 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:44614 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:44624 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:51926 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:51916 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.0.5:45880 - "POST /parse HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:33606 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:33604 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:46306 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:46308 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:59690 - "GET /readyz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:59688 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:42302 - "GET /healthz HTTP/1.1" 200 OK
+[pod/command-parser-c676687b5-zs4v9/service] INFO:     10.42.1.1:42300 - "GET /readyz HTTP/1.1" 200 OK
+HTTP/1.1 200 OK
+Content-Length: 72
+Content-Type: application/json
+Date: Fri, 06 Nov 2026 07:45:25 GMT
+Server: uvicorn
+X-Model-Version: smoke
+X-Served-By: command-parser-c676687b5-rxnbk
+
+{"intent":"weather_query","date":"weather","time":null,"place":"london"}

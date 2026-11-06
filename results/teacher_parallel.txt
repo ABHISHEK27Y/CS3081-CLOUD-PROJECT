@@ -1,0 +1,12 @@
+NAME                      STATUS    COMPLETIONS   DURATION   AGE   CONTAINERS   IMAGES                 SELECTOR
+job.batch/teacher-label   Running   0/2           16m        16m   worker       cloud-mini/worker:v1   batch.kubernetes.io/controller-uid=717e7a03-db91-4529-97cf-219b3932e4da
+
+NAME                        READY   STATUS    RESTARTS   AGE   IP          NODE                      NOMINATED NODE   READINESS GATES
+pod/teacher-label-0-ppvjq   1/1     Running   0          16m   10.42.0.6   k3d-cloud-mini-agent-0    <none>           <none>
+pod/teacher-label-1-htggx   1/1     Running   0          16m   10.42.1.8   k3d-cloud-mini-server-0   <none>           <none>
+[shard 0] 100/1500
+[shard 0] 125/1500
+[shard 0] 150/1500
+[shard 1] 100/1500
+[shard 1] 125/1500
+[shard 1] 150/1500

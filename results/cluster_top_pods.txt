@@ -1,0 +1,3 @@
+NAME                            CPU(cores)   MEMORY(bytes)   
+command-parser-59dc56d5-4bql2   953m         452Mi           
+command-parser-59dc56d5-56vkm   906m         475Mi           

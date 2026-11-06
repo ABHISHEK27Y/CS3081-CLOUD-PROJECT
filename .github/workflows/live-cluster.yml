@@ -1,0 +1,153 @@
+name: live-cluster
+
+# Stands up the real k3d cluster on a GitHub-hosted Linux runner (Docker is pre-installed) and runs
+# the Task 3 / 4 / 7 live tests that need a cluster, uploading the evidence as an artifact. This is the
+# same k3d (k3s-in-Docker) stack as the laptop "local cloud"; it just runs on a Linux runner so the
+# numbers can be produced in CI. Manual trigger only.
+on:
+  workflow_dispatch:
+
+env:
+  MODEL_RELEASE_TAG: model-v1
+
+jobs:
+  cluster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install k3d + kubectl + python deps
+        run: |
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.7.5 bash
+          k3d version
+          curl -sLO "https://dl.k8s.io/release/v1.30.6/bin/linux/amd64/kubectl"
+          sudo install -m 0755 kubectl /usr/local/bin/kubectl
+          kubectl version --client
+          python -m pip install -q boto3==1.35.76 locust
+          mkdir -p results
+
+      - name: .env (local-dev SeaweedFS creds)
+        run: cp .env.example .env
+
+      - name: "Task 3 - build image + report size"
+        run: |
+          docker build -f service/Dockerfile -t cloud-mini/service:v1 .
+          HUMAN=$(docker images cloud-mini/service:v1 --format '{{.Size}}')
+          BYTES=$(docker image inspect cloud-mini/service:v1 --format '{{.Size}}')
+          python - "$HUMAN" "$BYTES" <<'PY' | tee results/image_size.txt
+          import sys
+          human, b = sys.argv[1], int(sys.argv[2])
+          print(f"service image: {human}  ({b} bytes = {b/1e9:.2f} GB)")
+          print("under 2 GB limit:", b < 2*10**9)
+          PY
+
+      - name: Create k3d cluster + deploy (SeaweedFS, model from Release, service)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          k3d cluster create --config cluster/k3d.yaml
+          k3d image import cloud-mini/service:v1 -c cloud-mini
+          bash scripts/deploy.sh
+          kubectl -n app get deploy,svc,ingress,hpa,pods -o wide | tee results/k8s_objects.txt
+
+      - name: Wait for the service through the Ingress
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 -X POST localhost:8080/parse \
+              -H 'content-type: application/json' -d '{"text":"weather in london"}' || echo 000)
+            echo "attempt $i: $code"
+            [ "$code" = "200" ] && break
+            sleep 3
+          done
+          curl -s -i -X POST localhost:8080/parse -H 'content-type: application/json' \
+            -d '{"text":"what is the weather in london"}' | tee results/ingress_parse.txt
+
+      - name: "Task 4 - cold start (3 runs)"
+        continue-on-error: true
+        run: |
+          {
+            for i in 1 2 3; do
+              kubectl -n app delete pod -l app=command-parser --wait=true
+              s=$(date +%s)
+              kubectl -n app wait --for=condition=ready pod -l app=command-parser --timeout=300s
+              echo "cold start run $i: $(( $(date +%s) - s )) s"
+            done
+          } | tee results/coldstart.txt
+          kubectl -n app logs -l app=command-parser --tail=40 | tee results/coldstart_logs.txt
+
+      - name: "Task 7 - load test (Locust, standard command)"
+        continue-on-error: true
+        env:
+          LOADTEST_HEADERS_OUT: results/loadtest_headers.json
+        run: |
+          python -m locust -f tools/locustfile.py --headless --users 4 --spawn-rate 4 --run-time 90s \
+            --host http://localhost:8080 --csv results/loadtest --only-summary 2>&1 | tee results/loadtest.txt
+          kubectl -n app top pods 2>/dev/null | tee results/top_pods.txt || echo "metrics not ready" | tee results/top_pods.txt
+
+      - name: "Task 4 - rolling update v1 -> v2 under load, then rollback"
+        continue-on-error: true
+        run: |
+          ( ok=0; bad=0; end=$((SECONDS+50))
+            while [ $SECONDS -lt $end ]; do
+              c=$(curl -s -o /dev/null -w '%{http_code}' -m 20 -X POST localhost:8080/parse \
+                -H 'content-type: application/json' -d '{"text":"weather in london"}' || echo 000)
+              if [ "$c" = "200" ]; then ok=$((ok+1)); else bad=$((bad+1)); fi
+            done
+            total=$((ok+bad)); d=$total; [ $d -eq 0 ] && d=1
+            pct=$(awk "BEGIN{printf \"%.2f\", ($bad*100.0)/$d}")
+            echo "during rolling update: total=$total ok=$ok failed=$bad (${pct}%)" > results/rolling_update.txt
+          ) &
+          LOADPID=$!
+          sleep 5
+          kubectl -n app set env deployment/command-parser MODEL_VERSION=v2 MODEL_URI=s3://models/v2
+          kubectl -n app rollout status deployment/command-parser --timeout=300s
+          echo "X-Model-Version during v2:" >> results/rolling_update.txt
+          curl -s -D - -o /dev/null -X POST localhost:8080/parse -H 'content-type: application/json' \
+            -d '{"text":"weather in london"}' | grep -i x-model-version >> results/rolling_update.txt || true
+          kubectl -n app rollout undo deployment/command-parser
+          kubectl -n app rollout status deployment/command-parser --timeout=300s
+          echo "X-Model-Version after rollback:" >> results/rolling_update.txt
+          curl -s -D - -o /dev/null -X POST localhost:8080/parse -H 'content-type: application/json' \
+            -d '{"text":"weather in london"}' | grep -i x-model-version >> results/rolling_update.txt || true
+          wait $LOADPID || true
+          cat results/rolling_update.txt
+
+      - name: "Task 4 - recovery (delete a pod under a live deployment)"
+        continue-on-error: true
+        run: |
+          echo "before:" | tee results/recovery.txt
+          kubectl -n app get pods -l app=command-parser | tee -a results/recovery.txt
+          victim=$(kubectl -n app get pod -l app=command-parser -o name | head -1)
+          kubectl -n app delete "$victim"
+          kubectl -n app wait --for=condition=ready pod -l app=command-parser --timeout=240s
+          echo "after (replicas should be back to 2):" | tee -a results/recovery.txt
+          kubectl -n app get pods -l app=command-parser | tee -a results/recovery.txt
+
+      - name: "Task 4 - HPA status"
+        continue-on-error: true
+        run: |
+          kubectl -n app get hpa command-parser -o wide | tee results/hpa.txt || true
+          kubectl -n app describe hpa command-parser | sed -n '1,40p' | tee -a results/hpa.txt || true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "===== EVIDENCE SUMMARY ====="
+          for f in image_size.txt coldstart.txt rolling_update.txt recovery.txt hpa.txt loadtest_headers.json; do
+            echo "----- results/$f -----"; cat "results/$f" 2>/dev/null || echo "(missing)"; echo
+          done
+          echo "----- loadtest stats (csv) -----"; cat results/loadtest_stats.csv 2>/dev/null || echo "(missing)"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cluster-evidence
+          path: results/
+          if-no-files-found: warn

@@ -1,0 +1,4 @@
+per replica/hour      3.95 INR  (= 1.0*3.5 + 1.0*0.45)
+all 2 replicas/hour   7.9 INR
+requests/hour         3276.0  (= 0.91 rps * 3600)
+cost per 1000 reqs     2.4115 INR

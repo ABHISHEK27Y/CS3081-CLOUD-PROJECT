@@ -1,0 +1,5 @@
+Indicative local load test (single uvicorn process, laptop CPU, NOT the 2-replica cluster)
+4 users, 60s, no wait time.
+requests=56 failures=0 (0.00%)
+p50=4500ms p95=5700ms p99=7400ms throughput=0.91 req/s
+all served by local-test-pod / model v1

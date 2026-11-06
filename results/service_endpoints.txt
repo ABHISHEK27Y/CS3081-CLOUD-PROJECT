@@ -1,0 +1,18 @@
+=== Task 3 live endpoint evidence (local uvicorn, real model) ===
+# date: Sun Nov  1 12:00:04 IST 2026
+GET /healthz -> 200
+GET /readyz  -> 200
+
+POST /parse  (headers + body):
+HTTP/1.1 200 OK
+date: Sun, 01 Nov 2026 06:30:04 GMT
+server: uvicorn
+x-model-version: v1
+x-served-by: local-test-pod
+content-length: 67
+content-type: application/json
+
+{"intent":"weather_query","date":null,"time":null,"place":"london"}
+
+POST /parse  another:
+{"intent":"alarm_set","date":"tomorrow","time":"seven thirty am","place":null}

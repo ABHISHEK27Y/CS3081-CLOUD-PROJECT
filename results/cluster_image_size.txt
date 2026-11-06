@@ -1,0 +1,2 @@
+service image: 1.74GB  (374738955 bytes = 0.37 GB)
+under 2 GB limit: True

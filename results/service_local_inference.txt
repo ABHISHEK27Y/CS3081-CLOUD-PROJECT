@@ -1,0 +1,14 @@
+200 'remove the upcoming calendar event' -> {"intent": "calendar_remove", "date": "upcoming", "time": null, "place": null}
+200 'need an alarm set for sunday at fi' -> {"intent": "alarm_set", "date": "sunday", "time": "five in the morning", "place": null}
+200 'give me the time at washington rig' -> {"intent": "datetime_query", "date": null, "time": "right now", "place": null}
+200 'what time does mondays meeting sta' -> {"intent": "calendar_query", "date": null, "time": null, "place": null}
+200 'set my alarm for tuesday at six pm' -> {"intent": "alarm_set", "date": "tuesday", "time": "six pm", "place": null}
+200 'remind me about my meeting this af' -> {"intent": "calendar_set", "date": "this afternoon", "time": null, "place": null}
+200 'what day of the week is november f' -> {"intent": "datetime_query", "date": "november fourteenth", "time": null, "place": null}
+200 'do i have any appointments this we' -> {"intent": "calendar_query", "date": "this weekend", "time": null, "place": null}
+200 'what time is it in the central tim' -> {"intent": "datetime_query", "date": null, "time": null, "place": null}
+200 "when is dale's birthday"            -> {"intent": "datetime_query", "date": "darch", "time": null, "place": null}
+
+valid 200 responses: 10/10
+mean single-request latency: 1981 ms (CPU, this laptop)
+invalid-output -> validate(): None

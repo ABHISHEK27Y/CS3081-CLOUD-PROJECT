@@ -1,0 +1,12 @@
+# Normalise line endings to LF so shell scripts run on every platform (incl. Git Bash on Windows).
+* text=auto eol=lf
+*.sh  text eol=lf
+*.py  text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md  text eol=lf
+*.tar.gz binary
+*.bin binary
+*.safetensors binary

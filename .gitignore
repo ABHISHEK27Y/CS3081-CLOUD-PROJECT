@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Model weights and tokenizers — NEVER commit these (published as GitHub Release assets)
+models/
+*.pt
+*.bin
+*.safetensors
+*.gguf
+*.onnx
+tokenizer.json
+tokenizer_config.json
+special_tokens_map.json
+
+# Generated datasets (produced by the teacher + clean.py, stored in object storage)
+datasets/
+
+# Local tooling / secrets
+.env
+*.secret
+kubeconfig*
+*.tmp
+
+# LaTeX build artifacts (keep report.tex + report.pdf only)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# OS
+.DS_Store
+Thumbs.db

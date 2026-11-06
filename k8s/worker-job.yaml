@@ -1,0 +1,39 @@
+# Parallel teacher-labelling workers as an indexed Job in namespace "pipeline" (Task 1).
+# completions=2, parallelism=2 -> two Pods run at the same time, each with a different shard.
+# Kubernetes sets JOB_COMPLETION_INDEX (0 and 1) automatically; the worker reads it as its
+# SHARD_INDEX. Build and import the image first:
+#   docker build -f worker/Dockerfile -t cloud-mini/worker:v1 .
+#   k3d image import cloud-mini/worker:v1 -c cloud-mini
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: teacher-label
+  namespace: pipeline
+spec:
+  completionMode: Indexed
+  completions: 2
+  parallelism: 2
+  backoffLimit: 2
+  template:
+    metadata:
+      labels: {job: teacher-label}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: worker
+          image: cloud-mini/worker:v1
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: SHARD_COUNT, value: "2"}
+            - {name: TEACHER_MODEL, value: "phi3.5"}
+            - {name: DATASETS_BUCKET, value: "datasets"}
+            # Ollama running on the laptop is reachable from the cluster at host.k3d.internal.
+            - {name: OLLAMA_HOST, value: "http://host.k3d.internal:11434"}
+            - {name: S3_ENDPOINT, value: "http://seaweedfs.data.svc.cluster.local:8333"}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom: {secretKeyRef: {name: s3-credentials, key: AWS_ACCESS_KEY_ID}}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom: {secretKeyRef: {name: s3-credentials, key: AWS_SECRET_ACCESS_KEY}}
+          resources:
+            requests: {cpu: "250m", memory: "256Mi"}
+            limits: {cpu: "1", memory: "512Mi"}

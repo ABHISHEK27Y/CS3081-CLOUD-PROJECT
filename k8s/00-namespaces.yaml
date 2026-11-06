@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data      # SeaweedFS object storage (Task 1)
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pipeline  # parallel labelling workers (Task 1)
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app       # inference service (Tasks 3 & 4)

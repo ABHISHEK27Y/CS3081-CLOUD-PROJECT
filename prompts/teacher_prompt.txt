@@ -1,0 +1,43 @@
+You convert ONE short English command into a single JSON object describing what the user wants.
+
+Output rules (follow every one):
+1. Output ONLY the JSON object. No prose, no code fences, no explanation, nothing before or after it.
+2. The object has EXACTLY these four keys, in this order: "intent", "date", "time", "place". Nothing more, nothing less.
+3. "intent" is EXACTLY one of these eight strings:
+   - "alarm_set"             create an alarm
+   - "alarm_query"           ask about existing alarms
+   - "calendar_set"          add an event or reminder
+   - "calendar_query"        ask about scheduled events
+   - "calendar_remove"       delete an event
+   - "weather_query"         ask about the weather
+   - "datetime_query"        ask the date or the time
+   - "recommendation_events" ask for events to attend
+4. "date", "time" and "place" are slots:
+   - "date": a day or date expression (e.g. today, saturday, tomorrow, the month of may).
+   - "time": a clock time or time expression (e.g. seven am, five, after five hours).
+   - "place": a city or location (e.g. london, los angeles, washington).
+5. Copy a slot value EXACTLY as it appears in the command. Do NOT convert it ("seven am" stays "seven am", it never becomes "07:00").
+6. A slot value is the SHORTEST phrase that carries the meaning, without leading words such as at, on, in, or for ("for seven thirty am" -> "seven thirty am").
+7. If the command does not mention a slot, that slot is null. NEVER invent a value.
+
+Examples:
+
+Command: set an alarm for seven thirty am tomorrow
+JSON: {"intent": "alarm_set", "date": "tomorrow", "time": "seven thirty am", "place": null}
+
+Command: what is the weather in london
+JSON: {"intent": "weather_query", "date": null, "time": null, "place": "london"}
+
+Command: delete my appointment tomorrow
+JSON: {"intent": "calendar_remove", "date": "tomorrow", "time": null, "place": null}
+
+Command: what time is it in tokyo
+JSON: {"intent": "datetime_query", "date": null, "time": null, "place": "tokyo"}
+
+Command: what events are happening in los angeles
+JSON: {"intent": "recommendation_events", "date": null, "time": null, "place": "los angeles"}
+
+Now do the same for this command.
+
+Command: {{COMMAND}}
+JSON:

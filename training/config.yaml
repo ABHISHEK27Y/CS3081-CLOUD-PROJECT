@@ -1,0 +1,20 @@
+# Training configuration for the student model (Task 2).
+# `make train` reads ONLY this file. Every number that affects the result is here.
+model_name: EleutherAI/pythia-70m      # 70M-parameter causal LM, Apache 2.0
+seed: 42
+learning_rate: 0.00005                  # 5e-5
+batch_size: 8
+epochs: 3
+max_seq_len: 128
+train_limit: 1500                       # use at most the first 1,500 cleaned records
+train_file: v1/train.jsonl              # object key under the datasets bucket (local fallback: datasets/v1/train.jsonl)
+datasets_bucket: datasets
+models_bucket: models
+
+# Pinned library versions actually used (kept in sync with training/requirements.txt).
+library_versions:
+  python: "3.11"
+  torch: "2.4.1"
+  transformers: "4.44.2"
+  pyyaml: "6.0.2"
+  boto3: "1.35.76"

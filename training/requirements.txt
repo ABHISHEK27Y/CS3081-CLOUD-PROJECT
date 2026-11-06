@@ -1,0 +1,11 @@
+# Pinned training dependencies. CPU-only PyTorch (no CUDA) keeps the download small.
+# Install torch from the CPU index:
+#   pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r training/requirements.txt
+torch==2.4.1
+transformers==4.44.2
+tokenizers==0.19.1
+pyyaml==6.0.2
+boto3==1.35.76
+botocore==1.35.76
+numpy==1.26.4

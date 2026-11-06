@@ -1,0 +1,15 @@
+pod "command-parser-59dc56d5-gpdcp" deleted
+pod "command-parser-59dc56d5-qzxkd" deleted
+pod/command-parser-59dc56d5-8qcrv condition met
+pod/command-parser-59dc56d5-fwn9s condition met
+cold start run 1: 8 s
+pod "command-parser-59dc56d5-8qcrv" deleted
+pod "command-parser-59dc56d5-fwn9s" deleted
+pod/command-parser-59dc56d5-drwm2 condition met
+pod/command-parser-59dc56d5-gzsbj condition met
+cold start run 2: 8 s
+pod "command-parser-59dc56d5-drwm2" deleted
+pod "command-parser-59dc56d5-gzsbj" deleted
+pod/command-parser-59dc56d5-4bql2 condition met
+pod/command-parser-59dc56d5-56vkm condition met
+cold start run 3: 8 s

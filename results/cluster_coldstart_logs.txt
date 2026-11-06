@@ -1,0 +1,12 @@
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+model loaded (version v1)
+INFO:     10.42.1.1:55014 - "GET /readyz HTTP/1.1" 200 OK
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+model loaded (version v1)
+INFO:     10.42.0.1:42826 - "GET /readyz HTTP/1.1" 200 OK

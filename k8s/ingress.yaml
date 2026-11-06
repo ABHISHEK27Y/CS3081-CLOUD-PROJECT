@@ -1,0 +1,21 @@
+# Ingress that routes /parse to the Service through Traefik (bundled with k3s) (Task 4).
+# With the k3d port mapping 8080:80, the service is reachable at http://localhost:8080/parse,
+# which is exactly what the load test uses.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: command-parser
+  namespace: app
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /parse
+            pathType: Prefix
+            backend:
+              service:
+                name: command-parser
+                port:
+                  number: 80

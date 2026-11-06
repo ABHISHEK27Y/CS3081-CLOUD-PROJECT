@@ -1,0 +1,15 @@
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                  SELECTOR
+deployment.apps/command-parser   2/2     2            2           12s   service      cloud-mini/service:v1   app=command-parser
+
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+service/command-parser   ClusterIP   10.43.128.112   <none>        80/TCP    12s   app=command-parser
+
+NAME                                       CLASS     HOSTS   ADDRESS                 PORTS   AGE
+ingress.networking.k8s.io/command-parser   traefik   *       172.18.0.2,172.18.0.3   80      11s
+
+NAME                                                 REFERENCE                   TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/command-parser   Deployment/command-parser   cpu: <unknown>/70%   1         2         0          11s
+
+NAME                                READY   STATUS    RESTARTS   AGE   IP          NODE                      NOMINATED NODE   READINESS GATES
+pod/command-parser-59dc56d5-gpdcp   1/1     Running   0          12s   10.42.0.8   k3d-cloud-mini-agent-0    <none>           <none>
+pod/command-parser-59dc56d5-qzxkd   1/1     Running   0          12s   10.42.1.6   k3d-cloud-mini-server-0   <none>           <none>

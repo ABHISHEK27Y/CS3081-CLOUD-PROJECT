@@ -1,0 +1,26 @@
+# HorizontalPodAutoscaler (Task 4): min 1, max 2 replicas, target 70% CPU utilisation.
+# k3s bundles metrics-server, which provides the CPU metric. Utilisation is measured against
+# the CPU *request* (250m), so scale-up triggers around 175m average usage.
+#
+# Local-cluster limitation (state this in the report): max 2 is tiny, metrics-server samples
+# on an interval so scaling reacts with a delay, and on a single node both replicas share the
+# same CPUs, so "scaling out" does not add real capacity the way separate nodes would.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: command-parser
+  namespace: app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: command-parser
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

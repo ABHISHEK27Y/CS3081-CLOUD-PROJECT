@@ -1,0 +1,14 @@
+{
+  "_comment": "Task 5 NACL for the PUBLIC subnet (10.20.4.0/24), where the load balancer lives. Stateless: reply traffic needs its own rules. Rules are evaluated lowest-number-first; first match wins; default is deny. The deny for 198.51.100.0/24 must have a lower number than the web-port allows so it overrides them.",
+  "inbound": [
+    {"rule": 100, "protocol": "all",                      "cidr": "198.51.100.0/24", "action": "deny",  "_note": "block the abusive range on EVERY port, even 80/443 — placed first so it wins over rules 110/120"},
+    {"rule": 110, "protocol": "tcp", "port_from": 80,   "port_to": 80,    "cidr": "0.0.0.0/0",     "action": "allow", "_note": "HTTP from anywhere"},
+    {"rule": 120, "protocol": "tcp", "port_from": 443,  "port_to": 443,   "cidr": "0.0.0.0/0",     "action": "allow", "_note": "HTTPS from anywhere"},
+    {"rule": 130, "protocol": "tcp", "port_from": 22,   "port_to": 22,    "cidr": "10.20.5.128/27","action": "allow", "_note": "SSH only from the management subnet"},
+    {"rule": 140, "protocol": "tcp", "port_from": 1024, "port_to": 65535, "cidr": "10.20.0.0/22",  "action": "allow", "_note": "replies coming back from the app subnet land on the LB's ephemeral ports"}
+  ],
+  "outbound": [
+    {"rule": 100, "protocol": "tcp", "port_from": 8000, "port_to": 8000,  "cidr": "10.20.0.0/22", "action": "allow", "_note": "forward /parse to the app subnet service on port 8000"},
+    {"rule": 110, "protocol": "tcp", "port_from": 1024, "port_to": 65535, "cidr": "0.0.0.0/0",    "action": "allow", "_note": "replies going back to clients land on their ephemeral ports (anywhere)"}
+  ]
+}

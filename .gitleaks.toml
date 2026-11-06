@@ -1,0 +1,15 @@
+title = "cloud-mini-project gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local development placeholders, not real secrets."
+paths = [
+  '''\.env\.example$''',
+  '''tests/''',
+]
+regexes = [
+  '''change-me-local-dev-secret''',
+  '''cloudmini''',
+]

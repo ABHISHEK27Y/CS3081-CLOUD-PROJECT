@@ -1,0 +1,85 @@
+name: CI Pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      model_source:
+        description: "release = trained model; base = untrained Pythia-70M (demonstrates quality gate failure)"
+        default: release
+        type: choice
+        options: [release, base]
+
+env:
+  MODEL_RELEASE_TAG: model-v1
+
+jobs:
+  # Stage 1: static analysis
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyflakes==3.2.0
+      - run: python -m pyflakes worker service training scripts tools
+
+  # Stage 2: unit tests
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pytest==8.3.2
+      - run: python -m pytest -q
+
+  # Stage 3: model evaluation from Release + quality gate (≥95% JSON validity)
+  evaluate:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install transformers==4.44.2 tokenizers==0.19.1 numpy==1.26.4
+      - name: Resolve model (Release asset or untrained base for gate demo)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SRC="${{ github.event.inputs.model_source || 'release' }}"
+          if [ "$SRC" = "base" ]; then
+            echo "MODEL=EleutherAI/pythia-70m" >> "$GITHUB_ENV"
+          else
+            gh release download "$MODEL_RELEASE_TAG" -p 'v1.tar.gz' -D models/
+            mkdir -p models/v1 && tar -xzf models/v1.tar.gz -C models/v1
+            echo "MODEL=models/v1" >> "$GITHUB_ENV"
+          fi
+      - name: Predict & score (gate at 95% validity)
+        run: |
+          mkdir -p results
+          python training/predict.py --model "$MODEL" --input data/validation.jsonl --out results/pred_ci.jsonl
+          python tools/score.py results/pred_ci.jsonl data/validation.jsonl --out results/score_ci.json --min-validity 95
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: score-report
+          path: results/score_ci.json
+
+  # Stage 4: secret scanning — must pass clean
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --config .gitleaks.toml --no-banner --redact --exit-code 1

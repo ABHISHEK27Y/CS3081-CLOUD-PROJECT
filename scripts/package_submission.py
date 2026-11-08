@@ -26,10 +26,14 @@ def main():
         for name in files:
             archive.write(ROOT / name, arcname=f"CS3081-CLOUD-PROJECT/{name}")
         archive.write(args.reflection, arcname=f"{ROLL}.pdf")
+        archive.write(ROOT / "report" / "report.pdf", arcname="report.pdf")
+        archive.write(ROOT / "README.md", arcname="README.md")
     with zipfile.ZipFile(args.out) as archive:
         names = archive.namelist()
         assert f"{ROLL}.pdf" in names
         assert "CS3081-CLOUD-PROJECT/report/report.pdf" in names
+        assert "report.pdf" in names
+        assert "README.md" in names
         assert not any(Path(name).name == ".env" or name.endswith(".safetensors") for name in names)
         bad = archive.testzip()
         if bad:

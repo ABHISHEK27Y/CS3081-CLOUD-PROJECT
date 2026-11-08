@@ -83,4 +83,4 @@ Selected model archives, tokenizers, checksums, and version manifest are in the 
 
 The [CI workflow](.github/workflows/ci.yml) runs lint, unit tests, Release-model evaluation with a 95% JSON-validity gate, and secret scanning. The [trained-model run passed](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42230797041); the [untrained-base run failed at the model gate](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42219523454), as intended. A [fresh-clone cluster workflow passed](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42219651934).
 
-The final submission includes the three-page handwritten reflection as `230103041.pdf` inside `230103041.zip`. The scan is a submission artifact, not a GitHub source file.
+The final `230103041.zip` has four entries at its top level: the three-page handwritten `230103041.pdf`, a copy of `report.pdf`, a copy of this `README.md`, and the `CS3081-CLOUD-PROJECT/` source folder. The source folder also retains the required `report/report.pdf` path. The scan is a submission artifact, not a GitHub source file.

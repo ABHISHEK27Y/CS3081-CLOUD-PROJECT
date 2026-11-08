@@ -85,4 +85,5 @@ the 95% JSON-validity gate, and gitleaks. To demonstrate the gate, manually run
 it once with `model_source=base` and save the failed run link in the report.
 The final report is `report/report.pdf` (at most eight pages). Tag the final
 commit `final` and include the scanned three-page handwritten reflection named
-exactly `230103041.pdf` in the submission ZIP. Keep `AI_USE.md` unchanged.
+exactly `230103041.pdf` in the submission ZIP. `AI_USE.md` documents the
+assistance used and how the submitted results were checked.

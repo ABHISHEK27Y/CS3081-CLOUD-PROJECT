@@ -30,7 +30,7 @@ def main():
         names = archive.namelist()
         assert f"{ROLL}.pdf" in names
         assert "CS3081-CLOUD-PROJECT/report/report.pdf" in names
-        assert not any("/.env" in name or name.endswith(".safetensors") for name in names)
+        assert not any(Path(name).name == ".env" or name.endswith(".safetensors") for name in names)
         bad = archive.testzip()
         if bad:
             raise RuntimeError(f"corrupt ZIP entry: {bad}")

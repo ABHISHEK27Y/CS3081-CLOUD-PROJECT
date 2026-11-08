@@ -1,114 +1,86 @@
-# Cloud Computing Mini Project — Command Parser (CS3081)
+# CS3081 Cloud Computing Mini Project
 
-> **Student:** Abhishek Yadav · **Roll:** 230103041 · **Repository:** https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT.git
+**Abhishek Yadav · 230103041**
+[Repository](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT) · [Report](report/report.pdf) · [Model Release](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/releases/tag/model-v1) · [AI use](AI_USE.md)
 
-Distills a command-parsing capability from `phi3.5` (teacher) into a compact `pythia-70m` student, then serves it behind a FastAPI endpoint on a local k3d (k3s-in-Docker) cluster backed by SeaweedFS for model storage.
+This project distils a command parser from an Ollama `phi3.5` teacher into a `pythia-70m` student. A FastAPI service loads the student from SeaweedFS and serves it through a Traefik Ingress on a local two-node k3d cluster.
 
-## What it does
-```
-POST /parse  {"text": "set an alarm for seven thirty am tomorrow"}
-→ {"intent": "alarm_set", "date": "tomorrow", "time": "seven thirty am", "place": null}
-```
-
-## Prerequisites
-| Tool | Purpose |
-|------|---------|
-| Docker | Build images, run k3d |
-| k3d + kubectl | Local Kubernetes (k3s in Docker) |
-| Ollama + `phi3.5` | Teacher model (~2.2 GB) |
-| Python 3.11 | Training, scripts, tests (CPU) |
-| make, locust, gh | Orchestration, load testing, releases |
-
-> **Windows:** run `.sh` scripts via Git Bash, or install `make` (`choco install make`). All `make` targets delegate to scripts in `scripts/`.
-
-## Repository Structure
-```
-cluster/        k3d.yaml                      (Task 1 cluster config)
-prompts/        teacher_prompt.txt            (Task 1 teacher prompt)
-worker/         label_worker.py, clean.py     (Task 1 sharded labelling + cleaning)
-training/       train.py, predict.py, config  (Task 2 student training + inference)
-service/        app.py, model_runner.py, Dockerfile  (Task 3 FastAPI /parse)
-k8s/            *.yaml                        (Tasks 1 & 4: NS, SeaweedFS, deploy, svc, ingress, HPA)
-network/        subnets.md, nacl.json         (Task 5: subnetting + NACL)
-scripts/        up/deploy/evaluate/cost/...   (Tasks 1–7 helpers)
-tools/          score.py, nacl_sim.py, locustfile.py  (provided checkers)
-tests/          unit tests                    (Task 6)
-data/           commands_pool, validation, schema, rate_card  (provided kit)
-results/        logs, score reports, locust output  (Task 7 evidence)
-report/         report.pdf                    (final report)
+```text
+commands_pool.jsonl → two teacher Job shards → cleaning → train.jsonl
+                                                  ↓
+                                             student v1/v2
+                                                  ↓
+                         GitHub Release + SeaweedFS models bucket
+                                                  ↓
+                          FastAPI Pods → Service → Ingress → /parse
 ```
 
-## Quick Start (2 commands, after the model Release is published)
+## Results at a glance
+
+| Area | Measured result | Evidence |
+| --- | --- | --- |
+| Teacher data | 3,000 commands, 2 shards; 2,748 cleaned rows kept | [Counts](results/clean_counts.json), [shard audit](results/teacher_shard_check.json) |
+| Model quality | Student v1: 100% JSON validity and 50% full-frame accuracy on 100 validation commands | [Scores](results/score_student_v1.json), [predictions](results/pred_student_v1.jsonl) |
+| Container | 1.742 GB image; 50 requests at 1 CPU / 1 GiB, peak sample 344.5 MiB | [Image](results/cluster_image_size.txt), [container run](results/cluster_50_requests.txt) |
+| Kubernetes | Cold-start median 20 s; two replicas served 129 and 123 counted responses; HPA observed 1 → 2 → 1 | [Cold starts](results/cluster_coldstart.txt), [response headers](results/cluster_loadtest_headers.json), [HPA](results/cluster_hpa.txt) |
+| Networking | Subnet plan and NACL sample checker: 6/6 | [Plan](network/subnets.md), [rules](network/nacl.json) |
+| Load | 254 requests, 3 failed (1.18%); p50 1,500 ms, p95 3,600 ms, 2.155 rps | [Locust CSV](results/cluster_loadtest_stats.csv) |
+| Cost | Estimated ₹1.0183 per 1,000 requests at measured throughput | [Calculation](results/cost_cluster.txt) |
+
+The 1% normal-load error target and 0.5% rollout error target were **not met**; failures were invalid model outputs, not Ingress errors. The [report](report/report.pdf) gives the measurements, limitations, and proposed improvements.
+
+## Repository map
+
+| Path | Contents |
+| --- | --- |
+| `data/`, `prompts/`, `worker/` | Supplied commands/schema, teacher prompt, labelling and cleaning |
+| `training/`, `models/` | Student training/evaluation; generated weights are excluded from Git |
+| `service/`, `k8s/`, `cluster/` | API, Dockerfile, Kubernetes manifests, k3d configuration |
+| `network/`, `tools/` | Subnet/NACL files and supplied checkers |
+| `scripts/`, `Makefile`, `docs/RUNBOOK.md` | Reproduction and measurement commands |
+| `tests/`, `.github/workflows/` | Unit tests, CI quality gate, live-cluster workflow |
+| `results/`, `report/` | Raw evidence and three-page report |
+
+## Quick start from a fresh clone
+
+Use Docker, k3d, kubectl, Python with `boto3`, GitHub CLI (`gh`), `tar`, `curl`, Git Bash and GNU Make. The released model archives are downloaded during deployment; model weights are never committed or baked into the service image. On Windows, run Make targets from Git Bash or another shell with `bash` and `make`.
+
 ```bash
-cp .env.example .env            # 1. local dev secret (edit value)
-make up                         # 2. cluster + storage + build + deploy
+git clone https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT.git
+cd CS3081-CLOUD-PROJECT
+cp .env.example .env     # replace the local SeaweedFS development secret
+make up                  # cluster, images, storage, model download, API
+curl -i -X POST http://localhost:8080/parse \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"what is the weather in london"}'
+make down                # delete the local cluster when finished
 ```
-`make up` spins up the k3d cluster, deploys SeaweedFS, creates `datasets`/`models` buckets, builds & imports images, seeds the model from the GitHub Release (if available), and exposes the service at `http://localhost:8080/parse` via Traefik Ingress.
 
-## Full Workflow
+`POST /parse` accepts a text command and returns the intent plus `date`, `time`, and `place` slots. `GET /healthz` checks process health; `GET /readyz` stays at 503 until model loading completes. An invalid model response becomes HTTP 500 with `{"error":"invalid_model_output"}`. See the [runbook](docs/RUNBOOK.md) for endpoint, rollout, recovery, and resource-check commands.
 
-### Task 1 — Object Storage + Parallel Teacher Labelling
+## Reproduce each task
+
+The complete teacher run took about 131 minutes on the tested laptop. Start Ollama with `phi3.5` reachable from the cluster before labelling. Training requires the pinned packages in `training/requirements.txt` and SeaweedFS access as described in the runbook.
+
 ```bash
-ollama pull phi3.5 && ollama serve          # teacher on laptop
-make up                                      # cluster + SeaweedFS + buckets (uploads commands_pool.jsonl)
-make label                                   # indexed Job: 2 workers (SHARD_INDEX 0, 1)
-# (or locally without k8s:)  bash scripts/run_workers_local.sh
-make clean-data                              # → datasets/v1/train.jsonl + train.sha256, prints counts
+ollama pull phi3.5
+make label                         # Task 1: indexed Job, two shards
+python scripts/verify_teacher_shards.py
+make clean-data                    # Task 1: validation, deduplication, checksum
+make train SUBSET=50               # Task 2: quick training smoke test
+make train                         # Task 2: v1, first 1,500 cleaned records
+make train-v2                      # Task 2: second seed for rollout
+make eval                          # Task 2: teacher, base, student scores
+make build && make deploy          # Tasks 3–4: container and deployment
+python tools/nacl_sim.py network/nacl.json network/packets_sample.jsonl --check
+make lint && make test             # Tasks 5–6: NACL, static checks, unit tests
+make load                          # Task 7: standard two-minute Locust run
 ```
 
-### Task 2 — Train the Student
-```bash
-pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
-pip install -r training/requirements.txt
-make train SUBSET=50          # smoke test (fast)
-make train                    # full v1 → models/v1/ (+ v1.tar.gz + model.sha256)
-make train-v2                 # v2 (seed 7) → models/v2/ (for Task 4 rollout)
-make eval                     # scores teacher, base, student → results/
-```
-Publish `models/v1.tar.gz` (and `v2.tar.gz`) as **GitHub Release assets** under tag `model-v1`; the checksum in `models/v1/model.sha256` must match. **Never commit weights.**
+Selected model archives, tokenizers, checksums, and version manifest are in the [GitHub Release](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/releases/tag/model-v1). The model is fetched into SeaweedFS during `make up`. The network plan is in [`network/subnets.md`](network/subnets.md). The measured reliability and cost commands are in [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
 
-### Task 3 — The Container
-```bash
-docker build -f service/Dockerfile -t cloud-mini/service:v1 .
-docker images cloud-mini/service:v1           # confirm ≤ 2 GB
-# local smoke test:
-docker run --rm -p 8000:8000 -e MODEL_URI=s3://models/v1 -e MODEL_VERSION=v1 \
-  -e S3_ENDPOINT=http://host.docker.internal:8333 -e MAX_NEW_TOKENS=64 \
-  -e AWS_ACCESS_KEY_ID=... -e AWS_SECRET_ACCESS_KEY=... cloud-mini/service:v1
-curl -s localhost:8000/parse -H 'content-type: application/json' -d '{"text":"weather in london"}'
-curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:8000/parse \
-  -H 'content-type: application/json' -d '{"text":"x"}'   # with FAULT_INJECT=1 → 500
-```
+## CI and submission
 
-### Task 4 — Deploy, Scale, Reliability
-```bash
-make deploy                                   # Deployment(2) + Service + Ingress + HPA
-kubectl -n app get deploy,svc,ingress,hpa,pods
-curl -s localhost:8080/parse -H 'content-type: application/json' -d '{"text":"weather in london"}' -i | head
-# rolling update / rollback, recovery, cold start, load balancing: see docs/RUNBOOK.md
-```
+The [CI workflow](.github/workflows/ci.yml) runs lint, unit tests, Release-model evaluation with a 95% JSON-validity gate, and secret scanning. The [trained-model run passed](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42230797041); the [untrained-base run failed at the model gate](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42219523454), as intended. A [fresh-clone cluster workflow passed](https://github.com/ABHISHEK27Y/CS3081-CLOUD-PROJECT/actions/runs/42219651934).
 
-### Task 5 — Networking (no cluster needed)
-```bash
-python tools/nacl_sim.py network/nacl.json network/packets_sample.jsonl --check   # 6/6
-python scripts/subnet_calc.py                                                      # subnet table
-```
-
-### Task 6 — Tests & CI
-```bash
-make lint && make test        # pyflakes + pytest (runs in CI too)
-```
-CI (`.github/workflows/ci.yml`): lint → tests → model eval from Release → quality gate (`score.py --min-validity 95`) → gitleaks. Trigger gate failure on untrained base: Actions → **ci** → *Run workflow* → `model_source = base`.
-
-### Task 7 — Performance & Cost
-```bash
-make load                                                     # Locust, standard marking command
-python scripts/cost.py --replicas 2 --cpu-limit 1 --mem-gib 1 --rps <measured>  # from loadtest
-```
-
-## Teardown
-```bash
-make down            # k3d cluster delete cloud-mini
-```
-
-See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the measured workflow, reliability commands, and submission checklist.
+The final submission includes the three-page handwritten reflection as `230103041.pdf` inside `230103041.zip`. The scan is a submission artifact, not a GitHub source file.
